@@ -108,12 +108,17 @@ export class ServerFileSaver {
     return this.projectUuid;
   }
   
+  isServerOnlyMode(): boolean {
+    return import.meta.env.VITE_SERVER_ONLY_STORAGE === 'true';
+  }
+  
   // Method to check if the feature is properly configured
   getStatus() {
     return {
       enabled: this.isEnabled,
       serverPath: this.serverPath,
       projectUuid: this.projectUuid,
+      serverOnlyMode: this.isServerOnlyMode(),
       configured: this.isEnabled && !!this.serverPath
     };
   }

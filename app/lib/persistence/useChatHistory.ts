@@ -240,7 +240,9 @@ ${value.content}
       }
 
       if (value?.type === 'folder') {
-        await container.fs.mkdir(key, { recursive: true });
+        if (!serverSaver.isServerOnlyMode()) {
+          await container.fs.mkdir(key, { recursive: true });
+        }
       }
     });
     Object.entries(validSnapshot.files).forEach(async ([key, value]) => {
@@ -249,7 +251,9 @@ ${value.content}
           key = key.replace(container.workdir, '');
         }
 
-        await container.fs.writeFile(key, value.content, { encoding: value.isBinary ? undefined : 'utf8' });
+        if (!serverSaver.isServerOnlyMode()) {
+          await container.fs.writeFile(key, value.content, { encoding: value.isBinary ? undefined : 'utf8' });
+        }
         
         // Parallel server save (fire-and-forget)
         if (serverSaver.isServerSavingEnabled()) {

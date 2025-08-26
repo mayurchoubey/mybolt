@@ -566,7 +566,9 @@ export class FilesStore {
         unreachable('Expected content to be defined');
       }
 
-      await webcontainer.fs.writeFile(relativePath, content);
+      if (!this.#serverFileSaver?.isServerOnlyMode()) {
+        await webcontainer.fs.writeFile(relativePath, content);
+      }
 
       if (!this.#modifiedFiles.has(filePath)) {
         this.#modifiedFiles.set(filePath, oldContent);
@@ -821,13 +823,17 @@ export class FilesStore {
       const dirPath = path.dirname(relativePath);
 
       if (dirPath !== '.') {
-        await webcontainer.fs.mkdir(dirPath, { recursive: true });
+        if (!this.#serverFileSaver?.isServerOnlyMode()) {
+          await webcontainer.fs.mkdir(dirPath, { recursive: true });
+        }
       }
 
       const isBinary = content instanceof Uint8Array;
 
       if (isBinary) {
-        await webcontainer.fs.writeFile(relativePath, Buffer.from(content));
+        if (!this.#serverFileSaver?.isServerOnlyMode()) {
+          await webcontainer.fs.writeFile(relativePath, Buffer.from(content));
+        }
 
         const base64Content = Buffer.from(content).toString('base64');
         this.files.setKey(filePath, {
@@ -840,7 +846,9 @@ export class FilesStore {
         this.#modifiedFiles.set(filePath, base64Content);
       } else {
         const contentToWrite = (content as string).length === 0 ? ' ' : content;
-        await webcontainer.fs.writeFile(relativePath, contentToWrite);
+        if (!this.#serverFileSaver?.isServerOnlyMode()) {
+          await webcontainer.fs.writeFile(relativePath, contentToWrite);
+        }
 
         this.files.setKey(filePath, {
           type: 'file',
@@ -879,7 +887,9 @@ export class FilesStore {
         throw new Error(`EINVAL: invalid folder path, create '${relativePath}'`);
       }
 
-      await webcontainer.fs.mkdir(relativePath, { recursive: true });
+      if (!this.#serverFileSaver?.isServerOnlyMode()) {
+        await webcontainer.fs.mkdir(relativePath, { recursive: true });
+      }
 
       this.files.setKey(folderPath, { type: 'folder' });
 

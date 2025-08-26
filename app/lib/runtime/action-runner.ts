@@ -317,16 +317,20 @@ export class ActionRunner {
 
     if (folder !== '.') {
       try {
-        await webcontainer.fs.mkdir(folder, { recursive: true });
-        logger.debug('Created folder', folder);
+        if (!this.#serverFileSaver.isServerOnlyMode()) {
+          await webcontainer.fs.mkdir(folder, { recursive: true });
+          logger.debug('Created folder', folder);
+        }
       } catch (error) {
         logger.error('Failed to create folder\n\n', error);
       }
     }
 
     try {
-      await webcontainer.fs.writeFile(relativePath, action.content);
-      logger.debug(`File written ${relativePath}`);
+      if (!this.#serverFileSaver.isServerOnlyMode()) {
+        await webcontainer.fs.writeFile(relativePath, action.content);
+        logger.debug(`File written ${relativePath}`);
+      }
       
       // Parallel server save (fire-and-forget)
       if (this.#serverFileSaver.isServerSavingEnabled()) {
