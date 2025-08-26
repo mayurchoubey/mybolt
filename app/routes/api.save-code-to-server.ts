@@ -63,13 +63,26 @@ export async function action({ request }: ActionFunctionArgs) {
     const path = await import('node:path');
     const fs = await import('node:fs/promises');
 
-    // Expand '~' to HOME directory
+    // Expand '~' to HOME directory and resolve the base path
     const homeDir = os.homedir();
-    const basePath = serverPath.startsWith('~/') || serverPath === '~' ? serverPath.replace(/^~(?=$|\/)/, homeDir) : serverPath;
+    let basePath: string;
+    
+    if (serverPath.startsWith('~/') || serverPath === '~') {
+      basePath = serverPath.replace(/^~(?=$|\/)/, homeDir);
+    } else if (serverPath.startsWith('./')) {
+      // If relative path, resolve from current working directory
+      basePath = path.resolve(process.cwd(), serverPath);
+    } else {
+      // Assume absolute path
+      basePath = path.resolve(serverPath);
+    }
 
     // Resolve absolute base directory and target file path
     const fullBaseDir = path.resolve(basePath);
-    const targetFilePath = path.join(fullBaseDir, sanitizedPath);
+    
+    // Clean the file path and ensure it doesn't create unwanted subdirectories
+    const cleanFilePath = sanitizedPath.replace(/^home\//, '').replace(/^project\//, '');
+    const targetFilePath = path.join(fullBaseDir, cleanFilePath);
     const targetDir = path.dirname(targetFilePath);
 
     // Ensure directories exist
@@ -78,7 +91,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // Write file (always UTF-8 string as sent by client)
     await fs.writeFile(targetFilePath, content, 'utf8');
 
-    logger.info(`Saved ${sanitizedPath} to ${targetFilePath}`);
+    logger.info(`Saved ${cleanFilePath} to ${targetFilePath}`);
 
     // Return success response
     return new Response(

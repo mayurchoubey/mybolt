@@ -96,15 +96,11 @@ export class WebContainerFileInterceptor {
       // Convert path to absolute path if needed
       const absolutePath = path.startsWith('/') ? path : `/${path}`;
       
-      // Get current chat ID and include it in the server path
-      const chatId = this.getCurrentChatId();
-      const chatPrefixedPath = `chat-${chatId}${absolutePath}`;
-      
-      // Save to server with chat ID subfolder
-      await this.serverSaver.saveCodeToServer(chatPrefixedPath, content);
-      console.log(`Intercepted and saved: ${absolutePath} to chat subfolder: ${chatPrefixedPath}`);
+      // Save to server with clean path
+      await this.serverSaver.saveCodeToServer(absolutePath, content);
+      console.log(`💾 Intercepted and saved: ${absolutePath}`);
     } catch (error) {
-      console.error('Failed to save intercepted file:', error);
+      console.error('❌ Failed to save intercepted file:', error);
     }
   }
 
