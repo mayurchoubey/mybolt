@@ -226,7 +226,7 @@ ${value.content}
   const restoreSnapshot = useCallback(async (id: string, snapshot?: Snapshot) => {
     // const snapshotStr = localStorage.getItem(`snapshot:${id}`); // Remove localStorage usage
     const container = await webcontainer;
-    const serverSaver = new ServerFileSaver();
+    const serverSaver = ServerFileSaver.getInstance();
 
     const validSnapshot = snapshot || { chatIndex: '', files: {} };
 

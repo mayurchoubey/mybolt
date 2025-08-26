@@ -77,7 +77,7 @@ export class FilesStore {
 
   constructor(webcontainerPromise: Promise<WebContainer>) {
     this.#webcontainer = webcontainerPromise;
-    this.#serverFileSaver = new ServerFileSaver();
+    this.#serverFileSaver = ServerFileSaver.getInstance();
 
     // Load deleted paths from localStorage if available
     try {

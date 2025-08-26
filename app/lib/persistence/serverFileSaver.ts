@@ -1,11 +1,22 @@
 export class ServerFileSaver {
+  private static instance: ServerFileSaver;
   private isEnabled = false;
   private serverPath: string = '~/bolt-generated-code';
+  private projectUuid: string;
   private pendingSaves = new Map<string, { content: string; timer: NodeJS.Timeout }>();
   private maxRetries = 2;
   
-  constructor() {
+  private constructor() {
     this.initFromEnv();
+    // Generate a unique project UUID for this session
+    this.projectUuid = this.generateUuid();
+  }
+  
+  public static getInstance(): ServerFileSaver {
+    if (!ServerFileSaver.instance) {
+      ServerFileSaver.instance = new ServerFileSaver();
+    }
+    return ServerFileSaver.instance;
   }
   
   private initFromEnv() {
@@ -45,6 +56,9 @@ export class ServerFileSaver {
   
   private async _saveWithRetry(filePath: string, content: string, isBinary: boolean, retryCount: number = 0): Promise<boolean> {
     try {
+      // Create server path with UUID subfolder
+      const serverPathWithUuid = `${this.serverPath}/${this.projectUuid}`;
+      
       // Send file to server via API endpoint
       const response = await fetch('/api/save-code-to-server', {
         method: 'POST',
@@ -54,7 +68,7 @@ export class ServerFileSaver {
         body: JSON.stringify({
           filePath,
           content,
-          serverPath: this.serverPath,
+          serverPath: serverPathWithUuid,
           timestamp: new Date().toISOString(),
           isBinary
         }),
@@ -90,12 +104,26 @@ export class ServerFileSaver {
     return this.serverPath;
   }
   
+  getProjectUuid() {
+    return this.projectUuid;
+  }
+  
   // Method to check if the feature is properly configured
   getStatus() {
     return {
       enabled: this.isEnabled,
       serverPath: this.serverPath,
+      projectUuid: this.projectUuid,
       configured: this.isEnabled && !!this.serverPath
     };
+  }
+  
+  // Generate a simple UUID for project isolation
+  private generateUuid(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
   }
 }

@@ -85,7 +85,7 @@ export class ActionRunner {
   ) {
     this.#webcontainer = webcontainerPromise;
     this.#shellTerminal = getShellTerminal;
-    this.#serverFileSaver = new ServerFileSaver();
+    this.#serverFileSaver = ServerFileSaver.getInstance();
     this.onAlert = onAlert;
     this.onSupabaseAlert = onSupabaseAlert;
     this.onDeployAlert = onDeployAlert;
