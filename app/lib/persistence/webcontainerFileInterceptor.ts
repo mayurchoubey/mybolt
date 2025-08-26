@@ -12,6 +12,25 @@ export class WebContainerFileInterceptor {
     this.interceptFileOperations();
   }
 
+  private getCurrentChatId(): string {
+    try {
+      if (typeof window !== 'undefined') {
+        // Extract chat ID from URL (format: /chat/123)
+        const match = window.location.pathname.match(/\/chat\/([^/]+)/);
+        
+        if (match && match[1]) {
+          return match[1];
+        }
+      }
+      
+      // Return a default chat ID if none is found
+      return 'default';
+    } catch (error) {
+      console.warn('Failed to get current chat ID, using default:', error);
+      return 'default';
+    }
+  }
+
   private interceptFileOperations() {
     // Store original file system methods
     this.originalFs = {
@@ -77,9 +96,13 @@ export class WebContainerFileInterceptor {
       // Convert path to absolute path if needed
       const absolutePath = path.startsWith('/') ? path : `/${path}`;
       
-      // Save to server
-      await this.serverSaver.saveCodeToServer(absolutePath, content);
-      console.log(`Intercepted and saved: ${absolutePath}`);
+      // Get current chat ID and include it in the server path
+      const chatId = this.getCurrentChatId();
+      const chatPrefixedPath = `chat-${chatId}${absolutePath}`;
+      
+      // Save to server with chat ID subfolder
+      await this.serverSaver.saveCodeToServer(chatPrefixedPath, content);
+      console.log(`Intercepted and saved: ${absolutePath} to chat subfolder: ${chatPrefixedPath}`);
     } catch (error) {
       console.error('Failed to save intercepted file:', error);
     }
@@ -93,5 +116,10 @@ export class WebContainerFileInterceptor {
   // Method to get server save status
   getServerSaveStatus() {
     return this.serverSaver.getStatus();
+  }
+
+  // Method to get current chat ID
+  getCurrentChatIdPublic(): string {
+    return this.getCurrentChatId();
   }
 }
