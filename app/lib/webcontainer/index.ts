@@ -34,6 +34,16 @@ if (!import.meta.env.SSR) {
 
         const { workbenchStore } = await import('~/lib/stores/workbench');
 
+        // Initialize file operation interceptor for server-side storage
+        try {
+          const { WebContainerFileInterceptor } = await import('~/lib/persistence/webcontainerFileInterceptor');
+          const interceptor = new WebContainerFileInterceptor(webcontainer);
+          console.log('WebContainer file interceptor initialized:', interceptor.isInterceptionActive());
+          console.log('Server save status:', interceptor.getServerSaveStatus());
+        } catch (error) {
+          console.warn('Failed to initialize file interceptor:', error);
+        }
+
         // Listen for preview errors
         webcontainer.on('preview-message', (message) => {
           console.log('WebContainer preview message:', message);
