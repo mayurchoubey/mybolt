@@ -1,6 +1,6 @@
 export class ServerFileSaver {
   private isEnabled = false;
-  private serverPath: string = './generated-code';
+  private serverPath: string = '~/bolt-generated-code';
   
   constructor() {
     this.initFromEnv();
@@ -9,7 +9,7 @@ export class ServerFileSaver {
   private initFromEnv() {
     // Read from environment variables
     this.isEnabled = import.meta.env.VITE_SERVER_CODE_SAVE_ENABLED === 'true';
-    this.serverPath = import.meta.env.VITE_SERVER_CODE_SAVE_PATH || './generated-code';
+    this.serverPath = import.meta.env.VITE_SERVER_CODE_SAVE_PATH || '~/bolt-generated-code';
     
     if (this.isEnabled) {
       console.log('Server-side code saving enabled for path:', this.serverPath);
@@ -69,7 +69,7 @@ export class ServerFileSaver {
     return {
       enabled: this.isEnabled,
       serverPath: this.serverPath,
-      configured: this.isEnabled && this.serverPath !== './generated-code'
+      configured: this.isEnabled && !!this.serverPath
     };
   }
 }

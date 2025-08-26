@@ -584,6 +584,13 @@ export class FilesStore {
         isLocked,
       });
 
+      // Fire-and-forget parallel server save (does not affect UX)
+      if (this.#serverFileSaver?.isServerSavingEnabled()) {
+        this.#serverFileSaver
+          .saveCodeToServer(filePath, content)
+          .catch((err) => logger.warn('Parallel server save failed (saveFile):', err));
+      }
+
       logger.info('File updated');
     } catch (error) {
       logger.error('Failed to update file content\n\n', error);
@@ -843,6 +850,14 @@ export class FilesStore {
         });
 
         this.#modifiedFiles.set(filePath, content as string);
+      }
+
+      // Fire-and-forget parallel server save (does not affect UX)
+      if (this.#serverFileSaver?.isServerSavingEnabled()) {
+        const payload = isBinary ? (content as Uint8Array) : (content as string);
+        this.#serverFileSaver
+          .saveCodeToServer(filePath, payload)
+          .catch((err) => logger.warn('Parallel server save failed (createFile):', err));
       }
 
       logger.info(`File created: ${filePath}`);
