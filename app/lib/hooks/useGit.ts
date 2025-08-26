@@ -189,6 +189,12 @@ const getFs = (
       }
     },
     writeFile: async (path: string, data: any, options: any = {}) => {
+      // Disable Git writes to WebContainer for Phase 1
+      if (import.meta.env.VITE_DISABLE_GIT_WRITES === 'true') {
+        console.log('Git write disabled:', path);
+        return;
+      }
+
       const relativePath = pathUtils.relative(webcontainer.workdir, path);
 
       if (record.current) {
@@ -213,6 +219,12 @@ const getFs = (
       }
     },
     mkdir: async (path: string, options: any) => {
+      // Disable Git writes to WebContainer for Phase 1
+      if (import.meta.env.VITE_DISABLE_GIT_WRITES === 'true') {
+        console.log('Git mkdir disabled:', path);
+        return;
+      }
+
       const relativePath = pathUtils.relative(webcontainer.workdir, path);
 
       try {
@@ -235,6 +247,12 @@ const getFs = (
       }
     },
     rm: async (path: string, options: any) => {
+      // Disable Git writes to WebContainer for Phase 1
+      if (import.meta.env.VITE_DISABLE_GIT_WRITES === 'true') {
+        console.log('Git rm disabled:', path);
+        return;
+      }
+
       const relativePath = pathUtils.relative(webcontainer.workdir, path);
 
       try {
@@ -246,6 +264,12 @@ const getFs = (
       }
     },
     rmdir: async (path: string, options: any) => {
+      // Disable Git writes to WebContainer for Phase 1
+      if (import.meta.env.VITE_DISABLE_GIT_WRITES === 'true') {
+        console.log('Git rmdir disabled:', path);
+        return;
+      }
+
       const relativePath = pathUtils.relative(webcontainer.workdir, path);
 
       try {
@@ -257,6 +281,12 @@ const getFs = (
       }
     },
     unlink: async (path: string) => {
+      // Disable Git writes to WebContainer for Phase 1
+      if (import.meta.env.VITE_DISABLE_GIT_WRITES === 'true') {
+        console.log('Git unlink disabled:', path);
+        return;
+      }
+
       const relativePath = pathUtils.relative(webcontainer.workdir, path);
 
       try {

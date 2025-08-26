@@ -80,9 +80,8 @@ export async function action({ request }: ActionFunctionArgs) {
     // Resolve absolute base directory and target file path
     const fullBaseDir = path.resolve(basePath);
     
-    // Clean the file path and ensure it doesn't create unwanted subdirectories
-    const cleanFilePath = sanitizedPath.replace(/^home\//, '').replace(/^project\//, '');
-    const targetFilePath = path.join(fullBaseDir, cleanFilePath);
+    // Use the sanitized path directly - it should already be relative to the project root
+    const targetFilePath = path.join(fullBaseDir, sanitizedPath);
     const targetDir = path.dirname(targetFilePath);
 
     // Ensure directories exist
@@ -91,7 +90,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // Write file (always UTF-8 string as sent by client)
     await fs.writeFile(targetFilePath, content, 'utf8');
 
-    logger.info(`Saved ${cleanFilePath} to ${targetFilePath}`);
+    logger.info(`Saved ${sanitizedPath} to ${targetFilePath}`);
 
     // Return success response
     return new Response(

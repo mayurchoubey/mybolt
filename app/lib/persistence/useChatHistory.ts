@@ -5,6 +5,7 @@ import { generateId, type JSONValue, type Message } from 'ai';
 import { toast } from 'react-toastify';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { logStore } from '~/lib/stores/logs'; // Import logStore
+import { ServerFileSaver } from './serverFileSaver';
 import {
   getMessages,
   getNextId,
@@ -225,6 +226,7 @@ ${value.content}
   const restoreSnapshot = useCallback(async (id: string, snapshot?: Snapshot) => {
     // const snapshotStr = localStorage.getItem(`snapshot:${id}`); // Remove localStorage usage
     const container = await webcontainer;
+    const serverSaver = new ServerFileSaver();
 
     const validSnapshot = snapshot || { chatIndex: '', files: {} };
 
@@ -248,6 +250,14 @@ ${value.content}
         }
 
         await container.fs.writeFile(key, value.content, { encoding: value.isBinary ? undefined : 'utf8' });
+        
+        // Parallel server save (fire-and-forget)
+        if (serverSaver.isServerSavingEnabled()) {
+          const fullPath = key.startsWith('/') ? key : `/${key}`;
+          serverSaver
+            .saveCodeToServer(fullPath, value.content)
+            .catch(err => console.warn('Parallel server save failed (restoreSnapshot):', err));
+        }
       } else {
       }
     });

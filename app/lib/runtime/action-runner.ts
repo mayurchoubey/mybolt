@@ -6,6 +6,7 @@ import { createScopedLogger } from '~/utils/logger';
 import { unreachable } from '~/utils/unreachable';
 import type { ActionCallbackData } from './message-parser';
 import type { BoltShell } from '~/utils/shell';
+import { ServerFileSaver } from '~/lib/persistence/serverFileSaver';
 
 const logger = createScopedLogger('ActionRunner');
 
@@ -67,6 +68,7 @@ export class ActionRunner {
   #webcontainer: Promise<WebContainer>;
   #currentExecutionPromise: Promise<void> = Promise.resolve();
   #shellTerminal: () => BoltShell;
+  #serverFileSaver: ServerFileSaver;
   runnerId = atom<string>(`${Date.now()}`);
   actions: ActionsMap = map({});
   onAlert?: (alert: ActionAlert) => void;
@@ -83,6 +85,7 @@ export class ActionRunner {
   ) {
     this.#webcontainer = webcontainerPromise;
     this.#shellTerminal = getShellTerminal;
+    this.#serverFileSaver = new ServerFileSaver();
     this.onAlert = onAlert;
     this.onSupabaseAlert = onSupabaseAlert;
     this.onDeployAlert = onDeployAlert;
@@ -324,6 +327,13 @@ export class ActionRunner {
     try {
       await webcontainer.fs.writeFile(relativePath, action.content);
       logger.debug(`File written ${relativePath}`);
+      
+      // Parallel server save (fire-and-forget)
+      if (this.#serverFileSaver.isServerSavingEnabled()) {
+        this.#serverFileSaver
+          .saveCodeToServer(action.filePath, action.content)
+          .catch(err => logger.warn('Parallel server save failed (ActionRunner):', err));
+      }
     } catch (error) {
       logger.error('Failed to write file\n\n', error);
     }
