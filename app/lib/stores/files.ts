@@ -21,6 +21,7 @@ import {
   clearCache,
 } from '~/lib/persistence/lockedFiles';
 import { getCurrentChatId } from '~/utils/fileLocks';
+import { ServerFileSaver } from '~/lib/persistence/serverFileSaver';
 
 const logger = createScopedLogger('FilesStore');
 
@@ -46,6 +47,7 @@ export type FileMap = Record<string, Dirent | undefined>;
 
 export class FilesStore {
   #webcontainer: Promise<WebContainer>;
+  #serverFileSaver: ServerFileSaver;
 
   /**
    * Tracks the number of files without folders.
@@ -75,6 +77,7 @@ export class FilesStore {
 
   constructor(webcontainerPromise: Promise<WebContainer>) {
     this.#webcontainer = webcontainerPromise;
+    this.#serverFileSaver = new ServerFileSaver();
 
     // Load deleted paths from localStorage if available
     try {
