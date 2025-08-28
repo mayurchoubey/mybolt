@@ -110,39 +110,54 @@ export class AutoInstallService {
         };
       }
       
-      // Check if npm install is needed
-      const needsInstall = await this.needsInstall(projectPath);
-      let npmInstallSuccess = true;
-      
-      if (needsInstall) {
-        logger.info(`Running npm install for project: ${projectPath}`);
-        npmInstallSuccess = await this.runNpmInstall(projectPath);
-      } else {
-        logger.debug(`npm install not needed for project: ${projectPath}`);
-      }
-      
-      // Run npm run dev if install was successful and dev script exists
-      let npmDevSuccess = false;
-      if (npmInstallSuccess && this.config.runDevScript) {
+      // 🚀 SIMPLE: Run both commands in one go with &&
+      if (this.config.runDevScript) {
         const hasDevScript = await this.hasDevScript(projectPath);
         if (hasDevScript) {
-          logger.info(`Running npm run dev for project: ${projectPath}`);
-          npmDevSuccess = await this.runNpmDev(projectPath);
+          logger.info(`Running 'npm install && npm run dev' for project: ${projectPath}`);
+          const success = await this.runNpmInstallAndDev(projectPath);
+          
+          const result: AutoInstallResult = {
+            success,
+            projectPath,
+            npmInstallSuccess: success,
+            npmDevSuccess: success,
+            duration: Date.now() - startTime
+          };
+          
+          logger.info(`Auto-install completed for project: ${projectPath}`, result);
+          return result;
         } else {
-          logger.debug(`No dev script found for project: ${projectPath}`);
+          logger.debug(`No dev script found, running only npm install for project: ${projectPath}`);
+          const npmInstallSuccess = await this.runNpmInstall(projectPath);
+          
+          const result: AutoInstallResult = {
+            success: npmInstallSuccess,
+            projectPath,
+            npmInstallSuccess,
+            npmDevSuccess: false,
+            duration: Date.now() - startTime
+          };
+          
+          logger.info(`Auto-install completed for project: ${projectPath}`, result);
+          return result;
         }
+      } else {
+        // Only run npm install
+        logger.info(`Running npm install for project: ${projectPath}`);
+        const npmInstallSuccess = await this.runNpmInstall(projectPath);
+        
+        const result: AutoInstallResult = {
+          success: npmInstallSuccess,
+          projectPath,
+          npmInstallSuccess,
+          npmDevSuccess: false,
+          duration: Date.now() - startTime
+        };
+        
+        logger.info(`Auto-install completed for project: ${projectPath}`, result);
+        return result;
       }
-      
-      const result: AutoInstallResult = {
-        success: npmInstallSuccess,
-        projectPath,
-        npmInstallSuccess,
-        npmDevSuccess,
-        duration: Date.now() - startTime
-      };
-      
-      logger.info(`Auto-install completed for project: ${projectPath}`, result);
-      return result;
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -167,7 +182,7 @@ export class AutoInstallService {
   private async hasValidPackageJson(projectPath: string): Promise<boolean> {
     try {
       const packageJsonPath = path.join(projectPath, 'package.json');
-      const fs = require('fs').promises;
+      const fs = await import('fs/promises');
       
       const stats = await fs.stat(packageJsonPath);
       if (!stats.isFile()) {
@@ -191,7 +206,7 @@ export class AutoInstallService {
   private async hasDevScript(projectPath: string): Promise<boolean> {
     try {
       const packageJsonPath = path.join(projectPath, 'package.json');
-      const fs = require('fs').promises;
+      const fs = await import('fs/promises');
       
       const content = await fs.readFile(packageJsonPath, 'utf-8');
       const packageJson = JSON.parse(content);
@@ -203,53 +218,14 @@ export class AutoInstallService {
     }
   }
   
-  /**
-   * Check if npm install is needed (node_modules missing or package-lock.json outdated)
-   */
-  private async needsInstall(projectPath: string): Promise<boolean> {
-    try {
-      const fs = require('fs').promises;
-      const nodeModulesPath = path.join(projectPath, 'node_modules');
-      const packageLockPath = path.join(projectPath, 'package-lock.json');
-      const packageJsonPath = path.join(projectPath, 'package.json');
-      
-      // Check if node_modules exists
-      try {
-        const nodeModulesStats = await fs.stat(nodeModulesPath);
-        if (!nodeModulesStats.isDirectory()) {
-          return true;
-        }
-      } catch {
-        // node_modules doesn't exist
-        return true;
-      }
-      
-      // Check if package-lock.json is newer than package.json
-      try {
-        const packageLockStats = await fs.stat(packageLockPath);
-        const packageJsonStats = await fs.stat(packageJsonPath);
-        
-        if (packageLockStats.mtime < packageJsonStats.mtime) {
-          return true;
-        }
-      } catch {
-        // package-lock.json doesn't exist
-        return true;
-      }
-      
-      return false;
-    } catch (error) {
-      logger.debug(`Error checking if install is needed for ${projectPath}:`, error);
-      return true; // Default to installing if we can't determine
-    }
-  }
+  // needsInstall method removed - we now always run npm install with &&
   
   /**
    * Run npm install in the project directory
    */
   private async runNpmInstall(projectPath: string): Promise<boolean> {
     try {
-      const { spawn } = require('child_process');
+      const { spawn } = await import('child_process');
       
       return new Promise((resolve) => {
         const npmProcess = spawn('npm', ['install'], {
@@ -302,11 +278,89 @@ export class AutoInstallService {
   }
   
   /**
+   * Run npm install && npm run dev in the project directory
+   */
+  private async runNpmInstallAndDev(projectPath: string): Promise<boolean> {
+    try {
+      const { spawn } = await import('child_process');
+      
+      return new Promise((resolve) => {
+        // 🚀 Run both commands with && - much simpler!
+        const npmProcess = spawn('npm install && npm run dev', [], {
+          cwd: projectPath,
+          stdio: 'pipe',
+          shell: true
+        });
+        
+        let stdout = '';
+        let stderr = '';
+        
+        npmProcess.stdout?.on('data', (data: Buffer) => {
+          stdout += data.toString();
+          logger.debug(`[${projectPath}] npm output: ${data.toString()}`);
+        });
+        
+        npmProcess.stderr?.on('data', (data: Buffer) => {
+          stderr += data.toString();
+          logger.debug(`[${projectPath}] npm stderr: ${data.toString()}`);
+        });
+        
+        // Set timeout for the combined command
+        const timeout = setTimeout(() => {
+          npmProcess.kill('SIGTERM');
+          logger.warn(`npm install && npm run dev timeout for project: ${projectPath}`);
+          resolve(false);
+        }, this.config.timeout);
+        
+        // For the combined command, we consider it successful if npm run dev starts
+        let hasStarted = false;
+        
+        npmProcess.stdout?.on('data', (data: Buffer) => {
+          const output = data.toString();
+          if (output.includes('Local:') || output.includes('ready') || output.includes('started') || output.includes('dev server')) {
+            hasStarted = true;
+            clearTimeout(timeout);
+            logger.info(`✅ npm install && npm run dev completed successfully for project: ${projectPath}`);
+            resolve(true);
+          }
+        });
+        
+        npmProcess.on('close', (code: number) => {
+          clearTimeout(timeout);
+          
+          if (hasStarted) {
+            // Already resolved as successful
+            return;
+          }
+          
+          if (code === 0) {
+            logger.info(`✅ npm install && npm run dev completed for project: ${projectPath}`);
+            resolve(true);
+          } else {
+            logger.warn(`⚠️ npm install && npm run dev failed for project: ${projectPath} with code ${code}`);
+            logger.debug(`npm stderr: ${stderr}`);
+            resolve(false);
+          }
+        });
+        
+        npmProcess.on('error', (error: Error) => {
+          clearTimeout(timeout);
+          logger.error(`❌ npm install && npm run dev error for project: ${projectPath}:`, error);
+          resolve(false);
+        });
+      });
+    } catch (error) {
+      logger.error(`Failed to run npm install && npm run dev for project: ${projectPath}:`, error);
+      return false;
+    }
+  }
+  
+  /**
    * Run npm run dev in the project directory
    */
   private async runNpmDev(projectPath: string): Promise<boolean> {
     try {
-      const { spawn } = require('child_process');
+      const { spawn } = await import('child_process');
       
       return new Promise((resolve) => {
         const npmProcess = spawn('npm', ['run', 'dev'], {

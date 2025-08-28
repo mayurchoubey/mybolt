@@ -202,31 +202,62 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             // 🚀 AUTO-INSTALL HOOK: Trigger after code generation completes
             if (finishReason !== 'length') {
               try {
-                // Get the current project UUID from ServerFileSaver
-                const { ServerFileSaver } = await import('~/lib/persistence/serverFileSaver');
-                const serverFileSaver = ServerFileSaver.getInstance();
-                const projectUuid = serverFileSaver.getProjectUuid();
-                const serverPath = serverFileSaver.getServerPath();
-                const projectPath = `${serverPath}/${projectUuid}`;
+                // Get the actual project path from the saved files
+                // Since we're in the server environment, we can use the actual server path
+                const serverPath = import.meta.env.VITE_SERVER_CODE_SAVE_PATH || '~/bolt-generated-code';
                 
-                logger.info(`🎯 Code generation complete! Triggering auto-install for project: ${projectPath}`);
+                // Find the most recently created project folder
+                const fs = await import('fs/promises');
+                const path = await import('path');
                 
-                // Call the auto-install API endpoint
-                const response = await fetch(`${request.url.split('/api/chat')[0]}/api/auto-install`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    action: 'trigger',
-                    projectPath: projectPath
-                  }),
-                });
-                
-                if (response.ok) {
-                  logger.info(`✅ Auto-install hook triggered successfully for project: ${projectPath}`);
-                } else {
-                  logger.warn(`⚠️ Auto-install hook failed with status: ${response.status}`);
+                try {
+                  const boltGeneratedDir = serverPath.replace('~', process.env.HOME || process.env.USERPROFILE || '');
+                  const projectFolders = await fs.readdir(boltGeneratedDir);
+                  
+                  // Filter for UUID-like folders and get their creation times
+                  const uuidFolders = projectFolders.filter(folder => 
+                    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(folder)
+                  );
+                  
+                  if (uuidFolders.length > 0) {
+                    // Get the most recently created folder
+                    let latestFolder = uuidFolders[0];
+                    let latestTime = 0;
+                    
+                    for (const folder of uuidFolders) {
+                      const folderPath = path.join(boltGeneratedDir, folder);
+                      const stats = await fs.stat(folderPath);
+                      if (stats.birthtime.getTime() > latestTime) {
+                        latestTime = stats.birthtime.getTime();
+                        latestFolder = folder;
+                      }
+                    }
+                    
+                    const projectPath = path.join(boltGeneratedDir, latestFolder);
+                    logger.info(`🎯 Code generation complete! Triggering auto-install for project: ${projectPath}`);
+                    
+                    // Call the auto-install API endpoint
+                    const response = await fetch(`${request.url.split('/api/chat')[0]}/api/auto-install`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        action: 'trigger',
+                        projectPath: projectPath
+                      }),
+                    });
+                    
+                    if (response.ok) {
+                      logger.info(`✅ Auto-install hook triggered successfully for project: ${projectPath}`);
+                    } else {
+                      logger.warn(`⚠️ Auto-install hook failed with status: ${response.status}`);
+                    }
+                  } else {
+                    logger.warn('⚠️ No project folders found for auto-install');
+                  }
+                } catch (fsError) {
+                  logger.warn('⚠️ Could not determine project path, skipping auto-install:', fsError);
                 }
               } catch (error) {
                 logger.warn('❌ Failed to trigger auto-install hook:', error);

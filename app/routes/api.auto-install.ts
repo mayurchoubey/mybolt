@@ -1,9 +1,10 @@
 import { json } from '@remix-run/cloudflare';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/cloudflare';
-import { AutoInstallService } from '~/lib/services/server-only/auto-install';
+// AutoInstallService imported dynamically to avoid client-side bundling
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
+    const { AutoInstallService } = await import('~/lib/services/server-only/auto-install');
     const autoInstallService = AutoInstallService.getInstance();
     const status = autoInstallService.getStatus();
     
@@ -30,6 +31,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const body = await request.json() as { action?: string; projectPath?: string; config?: any };
       const { action, projectPath, config } = body;
       
+      const { AutoInstallService } = await import('~/lib/services/server-only/auto-install');
       const autoInstallService = AutoInstallService.getInstance();
       
       switch (action) {
