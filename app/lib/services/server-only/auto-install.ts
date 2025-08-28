@@ -16,6 +16,7 @@ export interface AutoInstallResult {
   projectPath: string;
   npmInstallSuccess: boolean;
   npmDevSuccess: boolean;
+  port?: number;
   error?: string;
   duration: number;
 }
@@ -114,14 +115,18 @@ export class AutoInstallService {
       if (this.config.runDevScript) {
         const hasDevScript = await this.hasDevScript(projectPath);
         if (hasDevScript) {
-          logger.info(`Running 'npm install && npm run dev' for project: ${projectPath}`);
-          const success = await this.runNpmInstallAndDev(projectPath);
+          // 🎲 Generate random port between 3001-4999 to avoid conflicts
+          const randomPort = Math.floor(Math.random() * (4999 - 3001 + 1)) + 3001;
+          
+          logger.info(`Running 'npm install && npm run dev' for project: ${projectPath} (will use random port 3001-4999)`);
+          const success = await this.runNpmInstallAndDev(projectPath, randomPort);
           
           const result: AutoInstallResult = {
             success,
             projectPath,
             npmInstallSuccess: success,
             npmDevSuccess: success,
+            port: success ? randomPort : undefined,
             duration: Date.now() - startTime
           };
           
@@ -280,13 +285,13 @@ export class AutoInstallService {
   /**
    * Run npm install && npm run dev in the project directory
    */
-  private async runNpmInstallAndDev(projectPath: string): Promise<boolean> {
+  private async runNpmInstallAndDev(projectPath: string, port: number): Promise<boolean> {
     try {
       const { spawn } = await import('child_process');
       
       return new Promise((resolve) => {
-        // 🚀 Run both commands with && - much simpler!
-        const npmProcess = spawn('npm install && npm run dev', [], {
+        // 🚀 Run both commands with && and random port - much simpler!
+        const npmProcess = spawn(`npm install && PORT=${port} npm run dev`, [], {
           cwd: projectPath,
           stdio: 'pipe',
           shell: true
@@ -320,7 +325,7 @@ export class AutoInstallService {
           if (output.includes('Local:') || output.includes('ready') || output.includes('started') || output.includes('dev server')) {
             hasStarted = true;
             clearTimeout(timeout);
-            logger.info(`✅ npm install && npm run dev completed successfully for project: ${projectPath}`);
+            logger.info(`✅ npm install && npm run dev completed successfully for project: ${projectPath} on port ${port}`);
             resolve(true);
           }
         });
@@ -334,7 +339,7 @@ export class AutoInstallService {
           }
           
           if (code === 0) {
-            logger.info(`✅ npm install && npm run dev completed for project: ${projectPath}`);
+            logger.info(`✅ npm install && npm run dev completed for project: ${projectPath} on port ${port}`);
             resolve(true);
           } else {
             logger.warn(`⚠️ npm install && npm run dev failed for project: ${projectPath} with code ${code}`);
