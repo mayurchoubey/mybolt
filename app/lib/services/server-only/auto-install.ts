@@ -141,6 +141,7 @@ export class AutoInstallService {
             projectPath,
             npmInstallSuccess,
             npmDevSuccess: false,
+            port: undefined, // No port when no dev script
             duration: Date.now() - startTime
           };
           
@@ -157,6 +158,7 @@ export class AutoInstallService {
           projectPath,
           npmInstallSuccess,
           npmDevSuccess: false,
+          port: undefined, // No port when only npm install
           duration: Date.now() - startTime
         };
         
@@ -173,6 +175,7 @@ export class AutoInstallService {
         projectPath,
         npmInstallSuccess: false,
         npmDevSuccess: false,
+        port: undefined, // No port on error
         error: errorMessage,
         duration: Date.now() - startTime
       };

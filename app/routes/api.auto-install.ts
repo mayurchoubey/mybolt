@@ -44,6 +44,17 @@ export async function action({ request }: ActionFunctionArgs) {
           }
           
           const result = await autoInstallService.autoInstallAndRun(projectPath);
+          
+          // Log the result for debugging
+          console.log('🎯 Auto-install API response:', {
+            success: result.success,
+            projectPath: result.projectPath,
+            port: result.port,
+            npmInstallSuccess: result.npmInstallSuccess,
+            npmDevSuccess: result.npmDevSuccess,
+            duration: result.duration
+          });
+          
           return json({
             success: true,
             result,
