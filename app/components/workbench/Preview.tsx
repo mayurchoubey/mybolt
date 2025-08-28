@@ -88,19 +88,58 @@ export const Preview = memo(() => {
   const [showDeviceFrameInPreview, setShowDeviceFrameInPreview] = useState(false);
   const expoUrl = useStore(expoUrlAtom);
   const [isExpoQrModalOpen, setIsExpoQrModalOpen] = useState(false);
+  const [autoInstallPort, setAutoInstallPort] = useState<number | null>(null);
 
   useEffect(() => {
     if (!activePreview) {
       setIframeUrl(undefined);
       setDisplayPath('/');
-
+      setAutoInstallPort(null);
       return;
     }
 
     const { baseUrl } = activePreview;
     setIframeUrl(baseUrl);
     setDisplayPath('/');
+
+    // Check if this project has auto-install running
+    checkAutoInstallPort(baseUrl);
   }, [activePreview]);
+
+  const checkAutoInstallPort = async (baseUrl: string) => {
+    try {
+      // Extract project UUID from WebContainer URL
+      const projectId = baseUrl.match(/^https?:\/\/([^.]+)\.local-credentialless\.webcontainer-api\.io/)?.[1];
+      if (!projectId) return;
+
+      // Call auto-install API to get current port
+      const response = await fetch('/api/auto-install', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'get-port',
+          projectPath: `~/bolt-generated-code/${projectId}`
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json() as { success: boolean; port?: number };
+        if (data.success && data.port) {
+          setAutoInstallPort(data.port);
+        } else {
+          setAutoInstallPort(null);
+        }
+      }
+    } catch (error) {
+      console.log('Auto-install port check failed:', error);
+      setAutoInstallPort(null);
+    }
+  };
+
+  // Get the final iframe URL (auto-install port takes priority)
+  const finalIframeUrl = autoInstallPort 
+    ? `http://localhost:${autoInstallPort}${displayPath}`
+    : iframeUrl;
 
   const findMinPortIndex = useCallback(
     (minIndex: number, preview: { port: number }, index: number, array: { port: number }[]) => {
@@ -939,7 +978,7 @@ export const Preview = memo(() => {
                         background: 'white',
                         display: 'block',
                       }}
-                      src={iframeUrl}
+                      src={finalIframeUrl}
                       sandbox="allow-scripts allow-forms allow-popups allow-modals allow-storage-access-by-user-activation allow-same-origin"
                       allow="cross-origin-isolated"
                     />
@@ -950,7 +989,7 @@ export const Preview = memo(() => {
                   ref={iframeRef}
                   title="preview"
                   className="border-none w-full h-full bg-bolt-elements-background-depth-1"
-                  src={iframeUrl}
+                  src={finalIframeUrl}
                   sandbox="allow-scripts allow-forms allow-popups allow-modals allow-storage-access-by-user-activation allow-same-origin"
                   allow="geolocation; ch-ua-full-version-list; cross-origin-isolated; screen-wake-lock; publickey-credentials-get; shared-storage-select-url; ch-ua-arch; bluetooth; compute-pressure; ch-prefers-reduced-transparency; deferred-fetch; usb; ch-save-data; publickey-credentials-create; shared-storage; deferred-fetch-minimal; run-ad-auction; ch-ua-form-factors; ch-downlink; otp-credentials; payment; ch-ua; ch-ua-model; ch-ect; autoplay; camera; private-state-token-issuance; accelerometer; ch-ua-platform-version; idle-detection; private-aggregation; interest-cohort; ch-viewport-height; local-fonts; ch-ua-platform; midi; ch-ua-full-version; xr-spatial-tracking; clipboard-read; gamepad; display-capture; keyboard-map; join-ad-interest-group; ch-width; ch-prefers-reduced-motion; browsing-topics; encrypted-media; gyroscope; serial; ch-rtt; ch-ua-mobile; window-management; unload; ch-dpr; ch-prefers-color-scheme; ch-ua-wow64; attribution-reporting; fullscreen; identity-credentials-get; private-state-token-redemption; hid; ch-ua-bitness; storage-access; sync-xhr; ch-device-memory; ch-viewport-width; picture-in-picture; magnetometer; clipboard-write; microphone"
                 />

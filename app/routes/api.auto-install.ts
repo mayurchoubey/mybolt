@@ -91,6 +91,18 @@ export async function action({ request }: ActionFunctionArgs) {
             timestamp: new Date().toISOString()
           });
           
+        case 'get-port':
+          if (!projectPath) {
+            return json({ success: false, error: 'Project path is required' }, { status: 400 });
+          }
+
+          const portResult = await autoInstallService.getProjectStatus(projectPath);
+          return json({
+            success: true,
+            port: portResult.port,
+            status: portResult.status
+          });
+          
         default:
           return json({
             success: false,

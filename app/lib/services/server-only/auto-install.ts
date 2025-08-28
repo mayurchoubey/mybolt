@@ -25,6 +25,7 @@ export class AutoInstallService {
   private static instance: AutoInstallService;
   private runningProjects = new Set<string>();
   private config: AutoInstallConfig;
+  private projectPorts = new Map<string, number>();
   
   private constructor() {
     this.config = this.loadConfig();
@@ -328,6 +329,9 @@ export class AutoInstallService {
           if (output.includes('Local:') || output.includes('ready') || output.includes('started') || output.includes('dev server')) {
             hasStarted = true;
             clearTimeout(timeout);
+            // Store the port for this project
+            this.projectPorts.set(projectPath, port);
+            this.runningProjects.add(projectPath);
             logger.info(`✅ npm install && npm run dev completed successfully for project: ${projectPath} on port ${port}`);
             resolve(true);
           }
@@ -471,5 +475,23 @@ export class AutoInstallService {
       logger.error(`Failed to stop project: ${projectPath}:`, error);
       return false;
     }
+  }
+
+  /**
+   * Get port for a specific project
+   */
+  getProjectPort(projectPath: string): number | null {
+    return this.projectPorts.get(projectPath) || null;
+  }
+
+  /**
+   * Get status for a specific project
+   */
+  getProjectStatus(projectPath: string): { port: number | null; status: 'running' | 'not-running' } {
+    const port = this.projectPorts.get(projectPath);
+    return {
+      port: port || null,
+      status: port ? 'running' : 'not-running'
+    };
   }
 }
