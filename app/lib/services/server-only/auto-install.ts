@@ -291,7 +291,7 @@ export class AutoInstallService {
       
       return new Promise((resolve) => {
         // 🚀 Run both commands with && and random port - much simpler!
-        const npmProcess = spawn(`npm install && PORT=${port} npm run dev`, [], {
+        const npmProcess = spawn(`npm install && npm run dev -- --port ${port}`, [], {
           cwd: projectPath,
           stdio: 'pipe',
           shell: true
