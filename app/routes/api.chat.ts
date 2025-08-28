@@ -199,6 +199,40 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
               cumulativeUsage.totalTokens += usage.totalTokens || 0;
             }
 
+            // 🚀 AUTO-INSTALL HOOK: Trigger after code generation completes
+            if (finishReason !== 'length') {
+              try {
+                // Get the current project UUID from ServerFileSaver
+                const { ServerFileSaver } = await import('~/lib/persistence/serverFileSaver');
+                const serverFileSaver = ServerFileSaver.getInstance();
+                const projectUuid = serverFileSaver.getProjectUuid();
+                const serverPath = serverFileSaver.getServerPath();
+                const projectPath = `${serverPath}/${projectUuid}`;
+                
+                logger.info(`🎯 Code generation complete! Triggering auto-install for project: ${projectPath}`);
+                
+                // Call the auto-install API endpoint
+                const response = await fetch(`${request.url.split('/api/chat')[0]}/api/auto-install`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    action: 'trigger',
+                    projectPath: projectPath
+                  }),
+                });
+                
+                if (response.ok) {
+                  logger.info(`✅ Auto-install hook triggered successfully for project: ${projectPath}`);
+                } else {
+                  logger.warn(`⚠️ Auto-install hook failed with status: ${response.status}`);
+                }
+              } catch (error) {
+                logger.warn('❌ Failed to trigger auto-install hook:', error);
+              }
+            }
+
             if (finishReason !== 'length') {
               dataStream.writeMessageAnnotation({
                 type: 'usage',

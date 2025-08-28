@@ -1,6 +1,6 @@
 import { json } from '@remix-run/cloudflare';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/cloudflare';
-import { AutoInstallService } from '~/lib/services/auto-install';
+import { AutoInstallService } from '~/lib/services/server-only/auto-install';
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {

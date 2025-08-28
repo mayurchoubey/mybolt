@@ -167,7 +167,7 @@ export class AutoInstallService {
   private async hasValidPackageJson(projectPath: string): Promise<boolean> {
     try {
       const packageJsonPath = path.join(projectPath, 'package.json');
-      const fs = await import('node:fs/promises');
+      const fs = require('fs').promises;
       
       const stats = await fs.stat(packageJsonPath);
       if (!stats.isFile()) {
@@ -191,7 +191,7 @@ export class AutoInstallService {
   private async hasDevScript(projectPath: string): Promise<boolean> {
     try {
       const packageJsonPath = path.join(projectPath, 'package.json');
-      const fs = await import('node:fs/promises');
+      const fs = require('fs').promises;
       
       const content = await fs.readFile(packageJsonPath, 'utf-8');
       const packageJson = JSON.parse(content);
@@ -208,7 +208,7 @@ export class AutoInstallService {
    */
   private async needsInstall(projectPath: string): Promise<boolean> {
     try {
-      const fs = await import('node:fs/promises');
+      const fs = require('fs').promises;
       const nodeModulesPath = path.join(projectPath, 'node_modules');
       const packageLockPath = path.join(projectPath, 'package-lock.json');
       const packageJsonPath = path.join(projectPath, 'package.json');
@@ -249,8 +249,7 @@ export class AutoInstallService {
    */
   private async runNpmInstall(projectPath: string): Promise<boolean> {
     try {
-      const { spawn } = await import('node:child_process');
-      const { promisify } = await import('node:util');
+      const { spawn } = require('child_process');
       
       return new Promise((resolve) => {
         const npmProcess = spawn('npm', ['install'], {
@@ -262,11 +261,11 @@ export class AutoInstallService {
         let stdout = '';
         let stderr = '';
         
-        npmProcess.stdout?.on('data', (data) => {
+        npmProcess.stdout?.on('data', (data: Buffer) => {
           stdout += data.toString();
         });
         
-        npmProcess.stderr?.on('data', (data) => {
+        npmProcess.stderr?.on('data', (data: Buffer) => {
           stderr += data.toString();
         });
         
@@ -277,7 +276,7 @@ export class AutoInstallService {
           resolve(false);
         }, this.config.timeout);
         
-        npmProcess.on('close', (code) => {
+        npmProcess.on('close', (code: number) => {
           clearTimeout(timeout);
           
           if (code === 0) {
@@ -290,7 +289,7 @@ export class AutoInstallService {
           }
         });
         
-        npmProcess.on('error', (error) => {
+        npmProcess.on('error', (error: Error) => {
           clearTimeout(timeout);
           logger.error(`npm install error for project: ${projectPath}:`, error);
           resolve(false);
@@ -307,7 +306,7 @@ export class AutoInstallService {
    */
   private async runNpmDev(projectPath: string): Promise<boolean> {
     try {
-      const { spawn } = await import('node:child_process');
+      const { spawn } = require('child_process');
       
       return new Promise((resolve) => {
         const npmProcess = spawn('npm', ['run', 'dev'], {
@@ -319,11 +318,11 @@ export class AutoInstallService {
         let stdout = '';
         let stderr = '';
         
-        npmProcess.stdout?.on('data', (data) => {
+        npmProcess.stdout?.on('data', (data: Buffer) => {
           stdout += data.toString();
         });
         
-        npmProcess.stderr?.on('data', (data) => {
+        npmProcess.stderr?.on('data', (data: Buffer) => {
           stderr += data.toString();
         });
         
@@ -337,7 +336,7 @@ export class AutoInstallService {
         // For dev command, we consider it successful if it starts without immediate errors
         let hasStarted = false;
         
-        npmProcess.stdout?.on('data', (data) => {
+        npmProcess.stdout?.on('data', (data: Buffer) => {
           const output = data.toString();
           if (output.includes('Local:') || output.includes('ready') || output.includes('started')) {
             hasStarted = true;
@@ -347,7 +346,7 @@ export class AutoInstallService {
           }
         });
         
-        npmProcess.on('close', (code) => {
+        npmProcess.on('close', (code: number) => {
           clearTimeout(timeout);
           
           if (hasStarted) {
@@ -365,7 +364,7 @@ export class AutoInstallService {
           }
         });
         
-        npmProcess.on('error', (error) => {
+        npmProcess.on('error', (error: Error) => {
           clearTimeout(timeout);
           logger.error(`npm run dev error for project: ${projectPath}:`, error);
           resolve(false);

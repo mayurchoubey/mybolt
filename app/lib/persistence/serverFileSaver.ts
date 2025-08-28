@@ -6,6 +6,7 @@ export class ServerFileSaver {
   private serverPath: string = '~/bolt-generated-code';
   private projectUuid: string;
   private pendingSaves = new Map<string, { content: string; timer: NodeJS.Timeout }>();
+  // Auto-install hook moved to chat completion - not needed on individual file saves
   private maxRetries = 2;
   
   private constructor() {
@@ -80,8 +81,8 @@ export class ServerFileSaver {
         const result = await response.json() as { serverPath: string };
         console.log(`Saved ${filePath} to server at ${result.serverPath}`);
         
-        // NEW: Trigger auto-install hook after successful save
-        this.triggerAutoInstallHook(filePath, result.serverPath);
+        // Track this file as saved
+        // Auto-install hook moved to chat completion - not needed on individual file saves
         
         return true;
       } else {
@@ -138,60 +139,5 @@ export class ServerFileSaver {
     });
   }
   
-  /**
-   * Trigger auto-install hook after successful file save
-   */
-  private async triggerAutoInstallHook(filePath: string, serverPath: string): Promise<void> {
-    try {
-      // Only trigger for package.json or when project is complete
-      if (filePath === 'package.json' || this.isProjectComplete()) {
-        const projectDir = this.getProjectDirectory(serverPath);
-        
-        console.log(`Triggering auto-install hook for project: ${projectDir}`);
-        
-        // Call the API endpoint to trigger auto-install (fire-and-forget)
-        fetch('/api/auto-install', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'trigger',
-            projectPath: projectDir
-          }),
-        }).catch(err => {
-          console.warn('Auto-install API call failed:', err);
-        });
-      }
-    } catch (error) {
-      console.warn('Failed to trigger auto-install hook:', error);
-    }
-  }
-  
-  /**
-   * Get the project directory from the server path
-   */
-  private getProjectDirectory(serverPath: string): string {
-    // Extract the project directory (remove the filename)
-    const pathParts = serverPath.split('/');
-    const projectDir = pathParts.slice(0, -1).join('/');
-    return projectDir;
-  }
-  
-  /**
-   * Check if the project is complete enough to trigger auto-install
-   */
-  private isProjectComplete(): boolean {
-    // Check if we have all essential files for a typical project
-    const essentialFiles = ['package.json', 'src/', 'index.html', 'main.ts', 'App.tsx', 'app.tsx'];
-    const savedFiles = Array.from(this.pendingSaves.keys());
-    
-    // Check if we have at least package.json and one source file
-    const hasPackageJson = savedFiles.some(file => file === 'package.json');
-    const hasSourceFile = savedFiles.some(file => 
-      essentialFiles.some(essential => file.includes(essential))
-    );
-    
-    return hasPackageJson && hasSourceFile;
-  }
+  // Auto-install hook moved to chat completion - not needed on individual file saves
 }
