@@ -26,6 +26,7 @@ import useViewport from '~/lib/hooks';
 import { PushToGitHubDialog } from '~/components/@settings/tabs/connections/components/PushToGitHubDialog';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { usePreviewStore } from '~/lib/stores/previews';
+// Auto-install hook removed - service is server-side only
 
 interface WorkspaceProps {
   chatStarted?: boolean;
@@ -296,6 +297,8 @@ export const Workbench = memo(
     const selectedView = useStore(workbenchStore.currentView);
 
     const isSmallViewport = useViewport(1024);
+    
+    // Auto-install is server-side only, no client-side hook needed
 
     const setSelectedView = (view: WorkbenchViewType) => {
       workbenchStore.currentView.set(view);
@@ -477,6 +480,9 @@ export const Workbench = memo(
                       <FileModifiedDropdown fileHistory={fileHistory} onSelectFile={handleSelectFile} />
                     )}
                   </div>
+                  
+                  {/* Auto-install status indicator removed - service is server-side only */}
+                  
                   <IconButton
                     icon="i-ph:x-circle"
                     className="-mr-1"
