@@ -166,6 +166,15 @@ export default defineConfig((config) => {
         },
       },
     },
+    server: {
+      allowedHosts: [
+        'localhost',
+        '.ngrok-free.app',
+        '.ngrok.io',
+        '.ngrok.app'
+      ],
+      host: '0.0.0.0'
+    },
   };
 });
 
