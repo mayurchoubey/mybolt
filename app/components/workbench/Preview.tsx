@@ -326,29 +326,7 @@ export const Preview = memo(() => {
   // Removed manual check handler
   const checkLatestProject = undefined as unknown as () => void;
 
-  const stopAllProjects = async () => {
-    try {
-      console.log('🔍 Debug: Stopping all projects...');
-      
-      const response = await fetch('/api/auto-install', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'stop-all-projects'
-        })
-      });
 
-              if (response.ok) {
-          const data = await response.json();
-          console.log('🔍 Debug: All projects stopped:', data);
-          // Port will be cleared by the store when projects stop
-        } else {
-        console.log('🔍 Debug: Failed to stop projects:', response.status);
-      }
-    } catch (error) {
-      console.log('🔍 Debug: Error stopping projects:', error);
-    }
-  };
 
   const toggleFullscreen = async () => {
     if (!isFullscreen && containerRef.current) {
@@ -855,11 +833,6 @@ export const Preview = memo(() => {
         <div className="flex items-center gap-2">
           <IconButton icon="i-ph:arrow-clockwise" onClick={reloadPreview} />
           {/* Removed manual port check button */}
-          <IconButton
-            icon="i-ph:stop-circle"
-            onClick={stopAllProjects}
-            title="Stop All Projects"
-          />
           <IconButton
             icon="i-ph:selection"
             onClick={() => setIsSelectionMode(!isSelectionMode)}
