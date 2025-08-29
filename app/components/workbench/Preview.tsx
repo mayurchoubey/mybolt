@@ -307,10 +307,13 @@ export const Preview = memo(() => {
     }
   }, []);
 
-  // Add a button to manually trigger port check (for testing)
-  const manualPortCheck = useCallback(() => {
-    console.log('🔍 Debug: Manual port check triggered');
-    getLatestProjectId();
+  // Auto trigger latest project lookup after a slight delay on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      console.log('🔍 Debug: Auto-check latest project after delay');
+      getLatestProjectId();
+    }, 600); // slight delay to ensure auto-install trigger settles
+    return () => clearTimeout(timer);
   }, [getLatestProjectId]);
 
   const reloadPreview = () => {
@@ -319,10 +322,8 @@ export const Preview = memo(() => {
     }
   };
 
-  const checkLatestProject = () => {
-    console.log('🔍 Debug: Manual check for latest project triggered');
-    getLatestProjectId();
-  };
+  // Removed manual check handler
+  const checkLatestProject = undefined as unknown as () => void;
 
   const stopAllProjects = async () => {
     try {
@@ -852,11 +853,7 @@ export const Preview = memo(() => {
       <div className="bg-bolt-elements-background-depth-2 p-2 flex items-center gap-2">
         <div className="flex items-center gap-2">
           <IconButton icon="i-ph:arrow-clockwise" onClick={reloadPreview} />
-          <IconButton
-            icon="i-ph:play-circle"
-            onClick={checkLatestProject}
-            title="Check Latest Project Port"
-          />
+          {/* Removed manual port check button */}
           <IconButton
             icon="i-ph:stop-circle"
             onClick={stopAllProjects}
