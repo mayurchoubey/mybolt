@@ -34,13 +34,13 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     let content = await response.text();
     
     // Debug logging
-    console.log('🔍 Proxy Debug:', {
-      baseUrl,
-      targetUrl,
-      contentType,
-      contentLength: content.length,
-      first100Chars: content.substring(0, 100)
-    });
+    //console.log('🔍 Proxy Debug:', {
+    //  baseUrl,
+    //  targetUrl,
+    //  contentType,
+    //  contentLength: content.length,
+    //  first100Chars: content.substring(0, 100)
+    //});
 
     // If it's HTML, rewrite relative URLs to go through the proxy (only for document HTML)
     if (contentType.includes('text/html') && (targetUrl.endsWith('/') || targetUrl.endsWith('.html'))) {

@@ -1169,8 +1169,22 @@ export const Preview = memo(() => {
               />
             </>
           ) : (
-            <div className="flex w-full h-full justify-center items-center bg-bolt-elements-background-depth-1 text-bolt-elements-textPrimary">
-              No preview available
+            <div className="flex w-full h-full justify-center items-center bg-bolt-elements-background-depth-1">
+              <div className="text-center">
+                <h2 className="text-3xl font-bold text-bolt-elements-textPrimary mb-4">
+                  Under Construction
+                </h2>
+                <p className="text-lg text-bolt-elements-textSecondary mb-6">
+                  Your app is under construction. It's being built right now!
+                </p>
+                <div className="flex justify-center">
+                  <div className="flex space-x-3">
+                    <div className="w-3 h-3 bg-bolt-elements-textSecondary rounded-full animate-bounce"></div>
+                    <div className="w-3 h-3 bg-bolt-elements-textSecondary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-3 h-3 bg-bolt-elements-textSecondary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
