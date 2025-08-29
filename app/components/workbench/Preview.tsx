@@ -108,30 +108,28 @@ export const Preview = memo(() => {
 
   const checkAutoInstallPort = async (baseUrl: string) => {
     try {
-      // Extract project UUID from WebContainer URL
-      const projectId = baseUrl.match(/^https?:\/\/([^.]+)\.local-credentialless\.webcontainer-api\.io/)?.[1];
-      if (!projectId) return;
-
-      // Call auto-install API to get current port
+      // Get the current running auto-install port (if any)
       const response = await fetch('/api/auto-install', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'get-port',
-          projectPath: `~/bolt-generated-code/${projectId}`
+          action: 'get-current-port'
         })
       });
 
       if (response.ok) {
         const data = await response.json() as { success: boolean; port?: number };
+        console.log('🔍 Debug: Auto-install API response =', data);
         if (data.success && data.port) {
+          console.log('✅ Setting auto-install port:', data.port);
           setAutoInstallPort(data.port);
         } else {
+          console.log('❌ No port in API response');
           setAutoInstallPort(null);
         }
       }
     } catch (error) {
-      console.log('Auto-install port check failed:', error);
+      console.log('❌ Auto-install port check failed:', error);
       setAutoInstallPort(null);
     }
   };

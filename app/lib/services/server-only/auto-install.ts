@@ -332,6 +332,8 @@ export class AutoInstallService {
             // Store the port for this project
             this.projectPorts.set(projectPath, port);
             this.runningProjects.add(projectPath);
+            // Update global store for Preview component
+            setAutoInstallPort(port, projectPath);
             logger.info(`✅ npm install && npm run dev completed successfully for project: ${projectPath} on port ${port}`);
             resolve(true);
           }

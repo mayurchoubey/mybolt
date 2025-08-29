@@ -102,6 +102,23 @@ export async function action({ request }: ActionFunctionArgs) {
             port: portResult.port,
             status: portResult.status
           });
+
+        case 'get-current-port':
+          // Get the current running auto-install port (if any)
+          const runningProjects = autoInstallService.getStatus().runningProjects;
+          let currentPort = null;
+          
+          if (runningProjects.length > 0) {
+            // Get the first running project's port
+            const firstProject = runningProjects[0];
+            currentPort = autoInstallService.getProjectPort(firstProject);
+          }
+          
+          return json({
+            success: true,
+            port: currentPort,
+            status: currentPort ? 'running' : 'not-running'
+          });
           
         default:
           return json({
