@@ -26,6 +26,7 @@ export class AutoInstallService {
   private runningProjects = new Set<string>();
   private config: AutoInstallConfig;
   private projectPorts = new Map<string, number>();
+  private projectIdToPort = new Map<string, number>(); // UUID -> port mapping
   
   private constructor() {
     this.config = this.loadConfig();
@@ -332,8 +333,12 @@ export class AutoInstallService {
             // Store the port for this project
             this.projectPorts.set(projectPath, port);
             this.runningProjects.add(projectPath);
-            // Update global store for Preview component
-            setAutoInstallPort(port, projectPath);
+            // Also store the project ID (UUID) to port mapping for Preview component
+            const projectId = this.extractProjectIdFromPath(projectPath);
+            if (projectId) {
+              this.projectIdToPort.set(projectId, port);
+              logger.info(`🔗 Stored project ID ${projectId} -> port ${port}`);
+            }
             logger.info(`✅ npm install && npm run dev completed successfully for project: ${projectPath} on port ${port}`);
             resolve(true);
           }
@@ -495,5 +500,28 @@ export class AutoInstallService {
       port: port || null,
       status: port ? 'running' : 'not-running'
     };
+  }
+
+  /**
+  * Get port for a specific project ID (UUID)
+  */
+  getProjectPortById(projectId: string): number | null {
+    return this.projectIdToPort.get(projectId) || null;
+  }
+
+  /**
+   * Get status for a specific project ID (UUID)
+   */
+  getProjectStatusById(projectId: string): { port: number | null; status: 'running' | 'not-running' } {
+    const port = this.projectIdToPort.get(projectId);
+    return {
+      port: port || null,
+      status: port ? 'running' : 'not-running'
+    };
+  }
+
+  extractProjectIdFromPath(projectPath: string): string | null {
+    const match = projectPath.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+    return match ? match[1] : null;
   }
 }

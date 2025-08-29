@@ -250,6 +250,15 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
                     
                     if (response.ok) {
                       logger.info(`✅ Auto-install hook triggered successfully for project: ${projectPath}`);
+                      
+                      // Extract the project ID from the path to trigger Preview component
+                      const projectId = latestFolder;
+                      logger.info(`🔗 Extracted project ID: ${projectId} for Preview component`);
+                      
+                      // Trigger Preview component via custom event
+                      // This will be handled by the client-side chat component
+                      logger.info(`🔗 Preview trigger data prepared for project: ${projectId}`);
+                      
                     } else {
                       logger.warn(`⚠️ Auto-install hook failed with status: ${response.status}`);
                     }

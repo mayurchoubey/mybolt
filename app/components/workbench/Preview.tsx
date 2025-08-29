@@ -91,24 +91,88 @@ export const Preview = memo(() => {
   const [autoInstallPort, setAutoInstallPort] = useState<number | null>(null);
 
   useEffect(() => {
+    console.log('🔍 Debug: Preview useEffect triggered, activePreview:', activePreview);
+    console.log('🔍 Debug: All previews:', previews);
+    console.log('🔍 Debug: Active preview index:', activePreviewIndex);
+    
     if (!activePreview) {
+      console.log('🔍 Debug: No active preview, trying to get auto-install port for current project');
+      setIframeUrl(undefined);
+      setDisplayPath('/');
+      
+      // No active preview - this is normal when no code has been generated yet
+      console.log('🔍 Debug: No active preview - waiting for code generation to complete');
       setIframeUrl(undefined);
       setDisplayPath('/');
       setAutoInstallPort(null);
+      
       return;
     }
 
     const { baseUrl } = activePreview;
+    console.log('🔍 Debug: Setting iframeUrl to baseUrl:', baseUrl);
     setIframeUrl(baseUrl);
     setDisplayPath('/');
 
     // Check if this project has auto-install running
+    console.log('🔍 Debug: About to call checkAutoInstallPort with baseUrl:', baseUrl);
     checkAutoInstallPort(baseUrl);
   }, [activePreview]);
 
   const checkAutoInstallPort = async (baseUrl: string) => {
     try {
-      // Get the current running auto-install port (if any)
+      console.log('🔍 Debug: Checking for auto-install port...');
+      console.log('🔍 Debug: baseUrl:', baseUrl);
+      
+      // Extract project UUID from WebContainer URL
+      // Format: https://[uuid].local-credentialless.webcontainer-api.io
+      const projectId = baseUrl.match(/^https?:\/\/([^.]+)\.local-credentialless\.webcontainer-api\.io/)?.[1];
+      
+      if (!projectId) {
+        console.log('❌ No project ID extracted from URL:', baseUrl);
+        return;
+      }
+
+      console.log('🔍 Debug: Extracted project ID:', projectId);
+      
+      // Call the auto-install API to get the port for this specific project
+      const response = await fetch('/api/auto-install', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'get-port-by-id',
+          projectPath: projectId
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json() as { success: boolean; port?: number; status?: string };
+        console.log('🔍 Debug: Auto-install API response for project', projectId, ':', data);
+        
+        if (data.success && data.port) {
+          console.log('✅ Setting auto-install port:', data.port, 'for project:', projectId);
+          setAutoInstallPort(data.port);
+        } else {
+          console.log('❌ No port in API response for project:', projectId, 'status:', data.status);
+          setAutoInstallPort(null);
+        }
+      } else {
+        console.log('❌ API request failed with status:', response.status);
+        setAutoInstallPort(null);
+        setAutoInstallPort(null);
+      }
+    } catch (error) {
+      console.log('❌ Auto-install port check failed:', error);
+      setAutoInstallPort(null);
+    }
+  };
+
+  const checkAutoInstallPortForCurrentProject = async () => {
+    try {
+      console.log('🔍 Debug: Checking for auto-install port for current project...');
+      
+      // Since we're skipping WebContainer, we need to get the project ID from somewhere
+      // For now, let's try to get the most recent running project
       const response = await fetch('/api/auto-install', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -118,26 +182,75 @@ export const Preview = memo(() => {
       });
 
       if (response.ok) {
-        const data = await response.json() as { success: boolean; port?: number };
-        console.log('🔍 Debug: Auto-install API response =', data);
+        const data = await response.json() as { success: boolean; port?: number; status?: string };
+        console.log('🔍 Debug: Current auto-install port response:', data);
+        
         if (data.success && data.port) {
-          console.log('✅ Setting auto-install port:', data.port);
+          console.log('✅ Setting auto-install port:', data.port, 'for current project');
           setAutoInstallPort(data.port);
         } else {
-          console.log('❌ No port in API response');
+          console.log('❌ No current port available, status:', data.status);
           setAutoInstallPort(null);
         }
+      } else {
+        console.log('❌ Current port API request failed with status:', response.status);
+        setAutoInstallPort(null);
       }
     } catch (error) {
-      console.log('❌ Auto-install port check failed:', error);
+      console.log('❌ Current project auto-install port check failed:', error);
+      setAutoInstallPort(null);
+    }
+  };
+
+  const checkAutoInstallPortForProjectId = async (projectId: string) => {
+    try {
+      console.log('🔍 Debug: Function checkAutoInstallPortForProjectId called with projectId:', projectId);
+      console.log('🔍 Debug: About to make fetch request to /api/auto-install...');
+      
+      const response = await fetch('/api/auto-install', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'get-port-by-id',
+          projectPath: projectId
+        })
+      });
+      
+      console.log('🔍 Debug: Fetch request completed, response status:', response.status);
+
+      if (response.ok) {
+        const data = await response.json() as { success: boolean; port?: number; status?: string };
+        console.log('🔍 Debug: Project ID auto-install port response:', data);
+        
+        if (data.success && data.port) {
+          console.log('✅ Setting auto-install port:', data.port, 'for project ID:', projectId);
+          setAutoInstallPort(data.port);
+        } else {
+          console.log('❌ No port available for project ID:', projectId, 'status:', data.status);
+          setAutoInstallPort(null);
+        }
+      } else {
+        console.log('❌ Project ID port API request failed with status:', response.status);
+        setAutoInstallPort(null);
+      }
+    } catch (error) {
+      console.log('❌ Project ID auto-install port check failed:', error);
       setAutoInstallPort(null);
     }
   };
 
   // Get the final iframe URL (auto-install port takes priority)
+  // Use proxy to avoid cross-origin issues
   const finalIframeUrl = autoInstallPort 
-    ? `http://localhost:${autoInstallPort}${displayPath}`
+    ? `/api/proxy/${autoInstallPort}${displayPath}`
     : iframeUrl;
+    
+  console.log('🔍 Debug: iframe URL logic:', {
+    autoInstallPort,
+    displayPath,
+    iframeUrl,
+    finalIframeUrl
+  });
 
   const findMinPortIndex = useCallback(
     (minIndex: number, preview: { port: number }, index: number, array: { port: number }[]) => {
@@ -153,9 +266,85 @@ export const Preview = memo(() => {
     }
   }, [previews, findMinPortIndex]);
 
+  // Function to manually trigger port check for a specific project
+  // This should be called ONLY after code generation completes and auto-install starts
+  const triggerPortCheckForProject = useCallback(async (projectId: string) => {
+    console.log('🔍 Debug: Manually triggered port check for project:', projectId);
+    await checkAutoInstallPortForProjectId(projectId);
+  }, []);
+
+  // Function to get the latest project ID from the server
+  const getLatestProjectId = useCallback(async () => {
+    try {
+      console.log('🔍 Debug: Getting latest project ID from server...');
+      
+      // First get the latest project ID
+      const response = await fetch('/api/auto-install', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'get-latest-project'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json() as { success: boolean; projectId?: string; port?: number };
+        if (data.success && data.projectId) {
+          console.log('🔍 Debug: Latest project ID:', data.projectId, 'Port:', data.port);
+          
+          // If we got a port directly, use it
+          if (data.port) {
+            setAutoInstallPort(data.port);
+          } else {
+            // If no port, call get-port-by-id to get the port
+            console.log('🔍 Debug: No port in response, calling get-port-by-id...');
+            await checkAutoInstallPortForProjectId(data.projectId);
+          }
+        }
+      }
+    } catch (error) {
+      console.log('🔍 Debug: Error getting latest project ID:', error);
+    }
+  }, []);
+
+  // Add a button to manually trigger port check (for testing)
+  const manualPortCheck = useCallback(() => {
+    console.log('🔍 Debug: Manual port check triggered');
+    getLatestProjectId();
+  }, [getLatestProjectId]);
+
   const reloadPreview = () => {
     if (iframeRef.current) {
       iframeRef.current.src = iframeRef.current.src;
+    }
+  };
+
+  const checkLatestProject = () => {
+    console.log('🔍 Debug: Manual check for latest project triggered');
+    getLatestProjectId();
+  };
+
+  const stopAllProjects = async () => {
+    try {
+      console.log('🔍 Debug: Stopping all projects...');
+      
+      const response = await fetch('/api/auto-install', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'stop-all-projects'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('🔍 Debug: All projects stopped:', data);
+        setAutoInstallPort(null); // Clear current port
+      } else {
+        console.log('🔍 Debug: Failed to stop projects:', response.status);
+      }
+    } catch (error) {
+      console.log('🔍 Debug: Error stopping projects:', error);
     }
   };
 
@@ -664,6 +853,16 @@ export const Preview = memo(() => {
         <div className="flex items-center gap-2">
           <IconButton icon="i-ph:arrow-clockwise" onClick={reloadPreview} />
           <IconButton
+            icon="i-ph:play-circle"
+            onClick={checkLatestProject}
+            title="Check Latest Project Port"
+          />
+          <IconButton
+            icon="i-ph:stop-circle"
+            onClick={stopAllProjects}
+            title="Stop All Projects"
+          />
+          <IconButton
             icon="i-ph:selection"
             onClick={() => setIsSelectionMode(!isSelectionMode)}
             className={isSelectionMode ? 'bg-bolt-elements-background-depth-3' : ''}
@@ -898,7 +1097,7 @@ export const Preview = memo(() => {
             alignItems: 'center',
           }}
         >
-          {activePreview ? (
+          {(activePreview || autoInstallPort) ? (
             <>
               {isDeviceModeOn && showDeviceFrameInPreview ? (
                 <div
