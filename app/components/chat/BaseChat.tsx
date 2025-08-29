@@ -639,20 +639,23 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                           disabled={isStreaming}
                         />
                         {chatStarted && <ClientOnly>{() => <ExportChatButton exportChat={exportChat} />}</ClientOnly>}
-                        <IconButton
-                          title="Model Settings"
-                          className={classNames('transition-all flex items-center gap-1', {
-                            'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent':
-                              isModelSettingsCollapsed,
-                            'bg-bolt-elements-item-backgroundDefault text-bolt-elements-item-contentDefault':
-                              !isModelSettingsCollapsed,
-                          })}
-                          onClick={() => setIsModelSettingsCollapsed(!isModelSettingsCollapsed)}
-                          disabled={!providerList || providerList.length === 0}
-                        >
-                          <div className={`i-ph:caret-${isModelSettingsCollapsed ? 'right' : 'down'} text-lg`} />
-                          {isModelSettingsCollapsed ? <span className="text-xs">{model}</span> : <span />}
-                        </IconButton>
+                        {/* Model Settings button hidden */}
+                        {false && (
+                          <IconButton
+                            title="Model Settings"
+                            className={classNames('transition-all flex items-center gap-1', {
+                              'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent':
+                                isModelSettingsCollapsed,
+                              'bg-bolt-elements-item-backgroundDefault text-bolt-elements-item-contentDefault':
+                                !isModelSettingsCollapsed,
+                            })}
+                            onClick={() => setIsModelSettingsCollapsed(!isModelSettingsCollapsed)}
+                            disabled={!providerList || providerList.length === 0}
+                          >
+                            <div className={`i-ph:caret-${isModelSettingsCollapsed ? 'right' : 'down'} text-lg`} />
+                            <span />
+                          </IconButton>
+                        )}
                       </div>
                       {input.length > 3 ? (
                         <div className="text-xs text-bolt-elements-textTertiary">
