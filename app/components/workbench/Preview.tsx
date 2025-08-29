@@ -6,6 +6,7 @@ import { PortDropdown } from './PortDropdown';
 import { ScreenshotSelector } from './ScreenshotSelector';
 import { expoUrlAtom } from '~/lib/stores/qrCodeStore';
 import { ExpoQrModal } from '~/components/workbench/ExpoQrModal';
+import { autoInstallPortStore } from '~/lib/stores/autoInstallPort';
 
 type ResizeSide = 'left' | 'right' | null;
 
@@ -88,7 +89,8 @@ export const Preview = memo(() => {
   const [showDeviceFrameInPreview, setShowDeviceFrameInPreview] = useState(false);
   const expoUrl = useStore(expoUrlAtom);
   const [isExpoQrModalOpen, setIsExpoQrModalOpen] = useState(false);
-  const [autoInstallPort, setAutoInstallPort] = useState<number | null>(null);
+  const autoInstallPortInfo = useStore(autoInstallPortStore);
+  const autoInstallPort = autoInstallPortInfo.port;
 
   useEffect(() => {
     console.log('🔍 Debug: Preview useEffect triggered, activePreview:', activePreview);
@@ -307,14 +309,14 @@ export const Preview = memo(() => {
     }
   }, []);
 
-  // Auto trigger latest project lookup after a slight delay on mount
+  // Debug logging for iframe rendering condition
   useEffect(() => {
-    const timer = setTimeout(() => {
-      console.log('🔍 Debug: Auto-check latest project after delay');
-      getLatestProjectId();
-    }, 600); // slight delay to ensure auto-install trigger settles
-    return () => clearTimeout(timer);
-  }, [getLatestProjectId]);
+    console.log('🔍 Debug: Iframe rendering condition:', {
+      activePreview: !!activePreview,
+      autoInstallPort,
+      shouldRender: !!(activePreview || autoInstallPort)
+    });
+  }, [activePreview, autoInstallPort]);
 
   const reloadPreview = () => {
     if (iframeRef.current) {
@@ -337,11 +339,11 @@ export const Preview = memo(() => {
         })
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log('🔍 Debug: All projects stopped:', data);
-        setAutoInstallPort(null); // Clear current port
-      } else {
+              if (response.ok) {
+          const data = await response.json();
+          console.log('🔍 Debug: All projects stopped:', data);
+          // Port will be cleared by the store when projects stop
+        } else {
         console.log('🔍 Debug: Failed to stop projects:', response.status);
       }
     } catch (error) {

@@ -42,6 +42,7 @@ import { SupabaseConnection } from './SupabaseConnection';
 import { ExpoQrModal } from '~/components/workbench/ExpoQrModal';
 import { expoUrlAtom } from '~/lib/stores/qrCodeStore';
 import { useStore } from '@nanostores/react';
+import { setAutoInstallPort } from '~/lib/stores/autoInstallPort';
 import { StickToBottom, useStickToBottomContext } from '~/lib/hooks';
 
 const TEXTAREA_MIN_HEIGHT = 76;
@@ -147,6 +148,34 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           (x) => typeof x === 'object' && (x as any).type === 'progress',
         ) as ProgressAnnotation[];
         setProgressAnnotations(progressList);
+
+        // Check for preview-trigger events and notify Preview component
+        const previewTrigger = data.find(
+          (x) => typeof x === 'object' && (x as any).type === 'preview-trigger'
+        );
+        
+        if (previewTrigger && (previewTrigger as any).projectId) {
+          console.log('🔍 Preview trigger detected:', previewTrigger);
+          // Trigger port lookup for the Preview component
+          fetch('/api/auto-install', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'get-port-by-id',
+              projectPath: (previewTrigger as any).projectId
+            })
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success && data.port) {
+              console.log('🔍 Setting auto-install port from preview trigger:', data.port);
+              setAutoInstallPort(data.port, (previewTrigger as any).projectId);
+            }
+          })
+          .catch(error => {
+            console.error('🔍 Error fetching port for preview trigger:', error);
+          });
+        }
       }
     }, [data]);
     useEffect(() => {

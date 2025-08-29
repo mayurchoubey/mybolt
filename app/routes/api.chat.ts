@@ -255,8 +255,12 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
                       const projectId = latestFolder;
                       logger.info(`🔗 Extracted project ID: ${projectId} for Preview component`);
                       
-                      // Trigger Preview component via custom event
-                      // This will be handled by the client-side chat component
+                      // Send a lightweight event through the stream so client can react immediately
+                      dataStream.writeData({
+                        type: 'preview-trigger',
+                        projectId,
+                        message: 'Auto-install started; fetch port for preview'
+                      } as any);
                       logger.info(`🔗 Preview trigger data prepared for project: ${projectId}`);
                       
                     } else {
