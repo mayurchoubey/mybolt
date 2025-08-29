@@ -1,5 +1,6 @@
 import { createScopedLogger } from '~/utils/logger';
 import { path } from '~/utils/path';
+import { getDevServerHost } from '~/utils/previewConfig';
 
 const logger = createScopedLogger('AutoInstallService');
 
@@ -120,7 +121,7 @@ export class AutoInstallService {
           // 🎲 Generate random port between 3001-4999 to avoid conflicts
           const randomPort = Math.floor(Math.random() * (4999 - 3001 + 1)) + 3001;
           
-          logger.info(`Running 'npm install && npm run dev' for project: ${projectPath} (will use random port 3001-4999)`);
+                      logger.info(`Running 'npm install && npm run dev' for project: ${projectPath} (will use random port 3001-4999 with dynamic host binding)`);
           const success = await this.runNpmInstallAndDev(projectPath, randomPort);
           
           const result: AutoInstallResult = {
@@ -296,7 +297,8 @@ export class AutoInstallService {
       
       return new Promise((resolve) => {
         // 🚀 Run both commands with && and random port - much simpler!
-        const npmProcess = spawn(`npm install && npm run dev -- --port ${port}`, [], {
+        const devServerHost = getDevServerHost();
+        const npmProcess = spawn(`npm install && npm run dev -- --port ${port} --host ${devServerHost}`, [], {
           cwd: projectPath,
           stdio: 'pipe',
           shell: true

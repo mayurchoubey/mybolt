@@ -2,7 +2,21 @@ import type { LoaderFunctionArgs } from '@remix-run/node';
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   const { port, ...rest } = params;
-  const targetUrl = `http://localhost:${port}/${rest['*'] || ''}`;
+  
+  // Get base URL from environment variable or fallback to localhost for local development
+  const getBaseUrl = () => {
+    // Check environment variable first
+    const envBaseUrl = process.env.PREVIEW_BASE_URL || process.env.PUBLIC_BASE_URL;
+    if (envBaseUrl) {
+      return envBaseUrl.replace(/\/$/, ''); // Remove trailing slash
+    }
+    
+    // Fallback to localhost for local development
+    return 'http://localhost';
+  };
+  
+  const baseUrl = getBaseUrl();
+  const targetUrl = `${baseUrl}:${port}/${rest['*'] || ''}`;
   
   try {
     // Forward the request with original headers
@@ -21,6 +35,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     
     // Debug logging
     console.log('🔍 Proxy Debug:', {
+      baseUrl,
       targetUrl,
       contentType,
       contentLength: content.length,
