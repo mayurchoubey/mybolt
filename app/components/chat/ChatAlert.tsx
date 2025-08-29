@@ -9,6 +9,9 @@ interface Props {
 }
 
 export default function ChatAlert({ alert, clearAlert, postMessage }: Props) {
+  // Hide terminal error messages from end users
+  return null;
+  
   const { description, content, source } = alert;
 
   const isPreview = source === 'preview';
