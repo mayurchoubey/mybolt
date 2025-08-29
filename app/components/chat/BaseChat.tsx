@@ -166,10 +166,11 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
             })
           })
           .then(response => response.json())
-          .then(data => {
-            if (data.success && data.port) {
-              console.log('🔍 Setting auto-install port from preview trigger:', data.port);
-              setAutoInstallPort(data.port, (previewTrigger as any).projectId);
+          .then((portResp: any) => {
+            const portNum = (portResp as any)?.port as number | undefined;
+            if (portResp?.success && typeof portNum === 'number') {
+              console.log('🔍 Setting auto-install port from preview trigger:', portNum);
+              setAutoInstallPort(portNum, (previewTrigger as any).projectId);
             }
           })
           .catch(error => {
@@ -671,26 +672,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 </div>
               </div>
             </StickToBottom>
-            <div className="flex flex-col justify-center">
-              {!chatStarted && (
-                <div className="flex justify-center gap-2">
-                  {ImportButtons(importChat)}
-                  <GitCloneButton importChat={importChat} />
-                </div>
-              )}
-              <div className="flex flex-col gap-5">
-                {!chatStarted &&
-                  ExamplePrompts((event, messageInput) => {
-                    if (isStreaming) {
-                      handleStop?.();
-                      return;
-                    }
-
-                    handleSendMessage?.(event, messageInput);
-                  })}
-                {!chatStarted && <StarterTemplates />}
-              </div>
-            </div>
+            {/* Removed elements below input box (import buttons, examples, templates) */}
           </div>
           <ClientOnly>
             {() => (
