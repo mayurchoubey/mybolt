@@ -524,14 +524,13 @@ export const Menu = () => {
               </Dialog>
             </DialogRoot>
           </div>
-          <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-800 px-4 py-3">
-            <SettingsButton onClick={handleSettingsClick} />
+          <div className="flex items-center justify-end border-t border-gray-200 dark:border-gray-800 px-4 py-3">
             <ThemeSwitch />
           </div>
         </div>
       </motion.div>
 
-      <ControlPanel open={isSettingsOpen} onClose={handleSettingsClose} />
+      {/* Settings removed */}
     </>
   );
 };
