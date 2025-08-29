@@ -6,7 +6,7 @@ import { PortDropdown } from './PortDropdown';
 import { ScreenshotSelector } from './ScreenshotSelector';
 import { expoUrlAtom } from '~/lib/stores/qrCodeStore';
 import { ExpoQrModal } from '~/components/workbench/ExpoQrModal';
-import { autoInstallPortStore } from '~/lib/stores/autoInstallPort';
+import { autoInstallPortStore, setAutoInstallPort, clearAutoInstallPort } from '~/lib/stores/autoInstallPort';
 
 type ResizeSide = 'left' | 'right' | null;
 
@@ -106,7 +106,7 @@ export const Preview = memo(() => {
       console.log('🔍 Debug: No active preview - waiting for code generation to complete');
       setIframeUrl(undefined);
       setDisplayPath('/');
-      setAutoInstallPort(null);
+      clearAutoInstallPort();
       
       return;
     }
@@ -156,16 +156,15 @@ export const Preview = memo(() => {
           setAutoInstallPort(data.port);
         } else {
           console.log('❌ No port in API response for project:', projectId, 'status:', data.status);
-          setAutoInstallPort(null);
+          clearAutoInstallPort();
         }
       } else {
         console.log('❌ API request failed with status:', response.status);
-        setAutoInstallPort(null);
-        setAutoInstallPort(null);
+        clearAutoInstallPort();
       }
     } catch (error) {
       console.log('❌ Auto-install port check failed:', error);
-      setAutoInstallPort(null);
+      clearAutoInstallPort();
     }
   };
 
@@ -192,15 +191,15 @@ export const Preview = memo(() => {
           setAutoInstallPort(data.port);
         } else {
           console.log('❌ No current port available, status:', data.status);
-          setAutoInstallPort(null);
+          clearAutoInstallPort();
         }
       } else {
         console.log('❌ Current port API request failed with status:', response.status);
-        setAutoInstallPort(null);
+        clearAutoInstallPort();
       }
     } catch (error) {
       console.log('❌ Current project auto-install port check failed:', error);
-      setAutoInstallPort(null);
+      clearAutoInstallPort();
     }
   };
 
@@ -229,15 +228,15 @@ export const Preview = memo(() => {
           setAutoInstallPort(data.port);
         } else {
           console.log('❌ No port available for project ID:', projectId, 'status:', data.status);
-          setAutoInstallPort(null);
+          clearAutoInstallPort();
         }
       } else {
         console.log('❌ Project ID port API request failed with status:', response.status);
-        setAutoInstallPort(null);
+        clearAutoInstallPort();
       }
     } catch (error) {
       console.log('❌ Project ID auto-install port check failed:', error);
-      setAutoInstallPort(null);
+      clearAutoInstallPort();
     }
   };
 
